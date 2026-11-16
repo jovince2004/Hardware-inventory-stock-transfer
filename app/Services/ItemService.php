@@ -4,8 +4,8 @@ namespace App\Services;
 
 use App\Models\Item;
 use App\Models\StockTransfer;
-use App\Models\Supplier;
 use App\Models\Warehouse;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
@@ -16,11 +16,17 @@ use Illuminate\Support\Facades\DB;
  */
 class ItemService
 {
+    public function __construct(
+        private readonly SupplierService $supplierService,
+        private readonly WarehouseService $warehouseService
+    ) {}
+
     /* ----------------------------- READ ----------------------------- */
 
     public function paginate(?string $search = null, int $perPage = 15): LengthAwarePaginator
     {
         $page = Item::with('supplier')                 // eager loading
+            ->whereNull('archived_at')
             ->searchData($search)
             ->latestFirst()
             ->paginate($perPage)
@@ -35,12 +41,33 @@ class ItemService
         return $page;
     }
 
+    public function findActive(int $id): Item
+    {
+        $item = Item::with('supplier')
+            ->whereNull('archived_at')
+            ->findOrFail($id);
+
+        return $this->withStock($item);
+    }
+
+    public function findActiveForEdit(int $id): Item
+    {
+        return Item::with('supplier')
+            ->whereNull('archived_at')
+            ->findOrFail($id);
+    }
+
+    public function suppliers(): Collection
+    {
+        return $this->supplierService->listForSelect();
+    }
+
     /** Dependency data for the "create item" form. */
     public function createFormData(): array
     {
         return [
-            'suppliers'  => Supplier::orderBy('name')->get(['id', 'name']),
-            'warehouses' => Warehouse::orderBy('name')->get(['id', 'name']),
+            'suppliers'  => $this->suppliers(),
+            'warehouses' => $this->warehouseService->listForSelect(),
         ];
     }
 
@@ -48,13 +75,15 @@ class ItemService
     public function dashboardSummary(): array
     {
         return [
-            'items'      => Item::count(),
-            'suppliers'  => Supplier::count(),
-            'warehouses' => Warehouse::count(),
+            'items'      => Item::whereNull('archived_at')->count(),
+            'suppliers'  => $this->supplierService->count(),
+            'warehouses' => $this->warehouseService->count(),
             'stockUnits' => DB::table('transfer_details as d')
                 ->join('stock_transfers as t', 't.id', '=', 'd.stock_transfer_id')
+                ->join('items as i', 'i.id', '=', 'd.item_id')
                 ->where('t.transfer_status', 'completed')
                 ->whereNull('t.source_warehouse_id')
+                ->whereNull('i.archived_at')
                 ->sum('d.quantity_transferred'),
         ];
     }
@@ -65,10 +94,17 @@ class ItemService
     {
         return DB::transaction(function () use ($data) {
             $item = Item::create([
-                'item_code'        => $this->sanitizeCode($data['item_code']),
+                'item_code'        => 'TMP-'.bin2hex(random_bytes(12)),
                 'item_description' => $this->sanitizeText($data['item_description']),
                 'supplier_id'      => (int) $data['supplier_id'],
             ]);
+
+            $sequence = $item->id;
+            do {
+                $itemCode = 'HW-'.str_pad((string) $sequence++, 6, '0', STR_PAD_LEFT);
+            } while (Item::where('item_code', $itemCode)->exists());
+
+            $item->update(['item_code' => $itemCode]);
 
             // Opening stock is recorded as a completed "receipt" (source = NULL)
             // so it lives in the same transfer ledger as every other movement.
@@ -118,6 +154,12 @@ class ItemService
 
             return $this->withStock($item->load('supplier'));
         });
+    }
+
+    public function archive(int $id): void
+    {
+        $item = Item::whereNull('archived_at')->findOrFail($id);
+        $item->update(['archived_at' => now()]);
     }
 
     /* ------------------------ STOCK (display) ------------------------ */

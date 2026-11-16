@@ -8,10 +8,12 @@ type Props = {
 };
 
 export default function TransferCreate({ warehouses, items }: Props) {
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const { data, setData, post, processing, errors } = useForm({
         source_warehouse_id: '',
         target_warehouse_id: '',
-        transfer_date: new Date().toISOString().slice(0, 10),
+        transfer_date: today,
         transfer_reason: '',
         approved_by_staff: '',
         items: [{ item_code: '', quantity: '' }] as { item_code: string; quantity: string }[],
@@ -52,7 +54,7 @@ export default function TransferCreate({ warehouses, items }: Props) {
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="mb-1 block font-medium">Transfer date</label>
-                        <input type="date" className={inputCls} value={data.transfer_date} onChange={(e) => setData('transfer_date', e.target.value)} />
+                        <input type="date" max={today} required className={inputCls} value={data.transfer_date} onChange={(e) => setData('transfer_date', e.target.value)} />
                         <Err msg={err.transfer_date} />
                     </div>
                     <div>

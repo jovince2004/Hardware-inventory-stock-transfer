@@ -11,7 +11,16 @@ class Item extends Model
     protected $fillable = [
         'item_code',
         'item_description',
-        'supplier_id'];
+        'supplier_id',
+        'archived_at',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'archived_at' => 'datetime',
+        ];
+    }
 
     // Safety net: item_code is ALWAYS uppercase + trimmed when written.
     protected function itemCode(): Attribute

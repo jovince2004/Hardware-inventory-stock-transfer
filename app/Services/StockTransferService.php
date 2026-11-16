@@ -16,6 +16,10 @@ use Illuminate\Validation\ValidationException;
  */
 class StockTransferService
 {
+    public function __construct(
+        private readonly WarehouseService $warehouseService
+    ) {}
+
     /* ----------------------------- READ ----------------------------- */
 
     public function paginate(?string $search = null, int $perPage = 15): LengthAwarePaginator
@@ -31,7 +35,7 @@ class StockTransferService
     public function createFormData(): array
     {
         return [
-            'warehouses' => Warehouse::orderBy('name')->get(['id', 'name']),
+            'warehouses' => $this->warehouseService->listForSelect(),
             'items'      => Item::orderBy('item_code')->get(['id', 'item_code', 'item_description']),
         ];
     }

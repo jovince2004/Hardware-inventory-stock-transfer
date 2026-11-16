@@ -8,6 +8,10 @@ use App\Http\Controllers\WarehouseController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+
     return Inertia::render('welcome');
 })->name('home');
 
@@ -18,7 +22,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::resource('items', ItemController::class)
-    ->only(['index', 'create', 'store', 'update']);
+    ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
 
 Route::post('suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
 Route::post('warehouses', [WarehouseController::class, 'store'])->name('warehouses.store');

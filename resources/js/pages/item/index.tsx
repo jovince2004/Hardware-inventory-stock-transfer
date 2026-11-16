@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Head, Link, router } from '@inertiajs/react';
-import { Boxes, Package, Plus, Search, Truck, Warehouse } from 'lucide-react';
+import { Archive, Boxes, Eye, Package, Pencil, Plus, Search, Truck, Warehouse } from 'lucide-react';
 import { FormEvent, useState } from 'react';
 
 type Item = {
@@ -110,12 +110,13 @@ export default function ItemIndex({ items, filters, summary }: Props) {
                                     <TableHead>Supplier</TableHead>
                                     <TableHead>Stock by warehouse</TableHead>
                                     <TableHead className="text-right">Total units</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {items.data.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="h-32 text-center">
+                                        <TableCell colSpan={5} className="h-32 text-center">
                                             <div className="flex flex-col items-center gap-1">
                                                 <Package aria-hidden="true" className="text-muted-foreground/60 mb-1 size-8" />
                                                 <p className="font-medium">{filters.search ? 'No matching items' : 'No items yet'}</p>
@@ -161,6 +162,37 @@ export default function ItemIndex({ items, filters, summary }: Props) {
                                                     )}
                                                 </TableCell>
                                                 <TableCell className="text-right font-medium">{totalStock.toLocaleString()}</TableCell>
+                                                <TableCell>
+                                                    <div className="flex justify-end gap-1">
+                                                        <Button asChild size="icon" variant="ghost" aria-label={`View ${item.item_code}`}>
+                                                            <Link href={`/items/${item.id}`}>
+                                                                <Eye aria-hidden="true" />
+                                                            </Link>
+                                                        </Button>
+                                                        <Button asChild size="icon" variant="ghost" aria-label={`Edit ${item.item_code}`}>
+                                                            <Link href={`/items/${item.id}/edit`}>
+                                                                <Pencil aria-hidden="true" />
+                                                            </Link>
+                                                        </Button>
+                                                        <Button
+                                                            type="button"
+                                                            size="icon"
+                                                            variant="ghost"
+                                                            aria-label={`Archive ${item.item_code}`}
+                                                            onClick={() => {
+                                                                if (
+                                                                    window.confirm(
+                                                                        `Archive ${item.item_code}? It will be removed from the active item list.`,
+                                                                    )
+                                                                ) {
+                                                                    router.delete(`/items/${item.id}`);
+                                                                }
+                                                            }}
+                                                        >
+                                                            <Archive aria-hidden="true" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
                                             </TableRow>
                                         );
                                     })

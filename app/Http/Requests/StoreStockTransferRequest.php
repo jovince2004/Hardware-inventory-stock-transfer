@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Item;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class StoreStockTransferRequest extends FormRequest
 {
@@ -14,16 +16,19 @@ class StoreStockTransferRequest extends FormRequest
     // Uppercase every incoming item_code so "hm-001" matches "HM-001".
     protected function prepareForValidation(): void
     {
-        if (is_array($this->items)) {
-            $items = array_map(function ($line) {
-                if (is_array($line) && isset($line['item_code'])) {
-                    $line['item_code'] = strtoupper(trim((string) $line['item_code']));
-                }
-                return $line;
-            }, $this->items);
-
-            $this->merge(['items' => $items]);
+        $items = $this->input('items');
+        if (!is_array($items)) {
+            return;
         }
+
+        foreach ($items as &$line) {
+            if (is_array($line) && isset($line['item_code'])) {
+                $line['item_code'] = strtoupper(trim((string) $line['item_code']));
+            }
+        }
+        unset($line);
+
+        $this->merge(['items' => $items]);
     }
 
     public function rules(): array
@@ -31,12 +36,46 @@ class StoreStockTransferRequest extends FormRequest
         return [
             'source_warehouse_id' => ['required', 'integer', 'exists:warehouses,id'],
             'target_warehouse_id' => ['required', 'integer', 'exists:warehouses,id', 'different:source_warehouse_id'],
-            'transfer_date'       => ['required', 'date'],
+            'transfer_date'       => ['required', 'date', 'before_or_equal:today'],
             'transfer_reason'     => ['required', 'string', 'max:255'],
             'approved_by_staff'   => ['required', 'string', 'max:255'],
             'items'                  => ['required', 'array', 'min:1'],
-            'items.*.item_code'      => ['required', 'string', 'distinct', 'exists:items,item_code'],
+            'items.*.item_code'      => ['required', 'string', 'distinct'],
             'items.*.quantity'       => ['required', 'integer', 'min:1'],
+        ];
+    }
+
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                $items = $this->input('items');
+                if (!is_array($items)) {
+                    return;
+                }
+
+                $codes = [];
+                foreach ($items as $line) {
+                    if (is_array($line) && is_string($line['item_code'] ?? null) && $line['item_code'] !== '') {
+                        $codes[] = $line['item_code'];
+                    }
+                }
+                $codes = array_values(array_unique($codes));
+
+                $existingCodes = [];
+                foreach (array_chunk($codes, 500) as $codeBatch) {
+                    foreach (Item::whereIn('item_code', $codeBatch)->pluck('item_code') as $code) {
+                        $existingCodes[$code] = true;
+                    }
+                }
+
+                foreach ($items as $index => $line) {
+                    $code = is_array($line) ? ($line['item_code'] ?? null) : null;
+                    if (is_string($code) && $code !== '' && !isset($existingCodes[$code])) {
+                        $validator->errors()->add("items.{$index}.item_code", "Item code {$code} does not exist.");
+                    }
+                }
+            },
         ];
     }
 
@@ -44,8 +83,9 @@ class StoreStockTransferRequest extends FormRequest
     {
         return [
             'target_warehouse_id.different' => 'Source and target warehouse must be different.',
+            'transfer_date.required'        => 'Transfer date is required.',
+            'transfer_date.before_or_equal' => 'Transfer date cannot be in the future.',
             'items.required'                => 'A transfer needs at least one item.',
-            'items.*.item_code.exists'      => 'Item code :input does not exist.',
             'items.*.item_code.distinct'    => 'Item code :input is listed more than once.',
             'items.*.quantity.min'          => 'Quantity must be at least 1.',
         ];

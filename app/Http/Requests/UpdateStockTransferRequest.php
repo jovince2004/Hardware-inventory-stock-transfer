@@ -18,7 +18,7 @@ class UpdateStockTransferRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'transfer_date'     => ['sometimes', 'date'],
+            'transfer_date'     => ['sometimes', 'date', 'before_or_equal:today'],
             'transfer_reason'   => ['sometimes', 'string', 'max:255'],
             'approved_by_staff' => ['sometimes', 'string', 'max:255'],
         ];
@@ -28,6 +28,7 @@ class UpdateStockTransferRequest extends FormRequest
     {
         return [
             'transfer_date.date'          => 'Transfer date must be a valid date.',
+            'transfer_date.before_or_equal' => 'Transfer date cannot be in the future.',
             'transfer_reason.max'         => 'Reason may not exceed 255 characters.',
             'approved_by_staff.string'    => 'Approver name must be text.',
         ];

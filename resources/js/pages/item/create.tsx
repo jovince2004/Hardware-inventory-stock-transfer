@@ -21,7 +21,6 @@ export default function ItemCreate({ suppliers, warehouses }: Props) {
     const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
     const [warehouseDialogOpen, setWarehouseDialogOpen] = useState(false);
     const { data, setData, post, processing, errors } = useForm({
-        item_code: '',
         item_description: '',
         supplier_id: '',
         stocks: [] as StockEntry[],
@@ -84,30 +83,9 @@ export default function ItemCreate({ suppliers, warehouses }: Props) {
                     <Card>
                         <CardHeader>
                             <CardTitle>Item details</CardTitle>
-                            <CardDescription>Enter the item’s identification and supplier information.</CardDescription>
+                            <CardDescription>Item codes are generated automatically. Enter the description and supplier information.</CardDescription>
                         </CardHeader>
                         <CardContent className="grid gap-5 sm:grid-cols-2">
-                            <div className="space-y-2">
-                                <Label htmlFor="item_code">Item code</Label>
-                                <Input
-                                    id="item_code"
-                                    autoFocus
-                                    value={data.item_code}
-                                    onChange={(event) => setData('item_code', event.target.value)}
-                                    aria-invalid={Boolean(error.item_code)}
-                                    aria-describedby={error.item_code ? 'item_code-error' : 'item_code-hint'}
-                                    placeholder="e.g. HW-1001"
-                                />
-                                <p id="item_code-hint" className="text-muted-foreground text-xs">
-                                    Saved in uppercase automatically.
-                                </p>
-                                {error.item_code && (
-                                    <p id="item_code-error" className="text-destructive text-sm">
-                                        {error.item_code}
-                                    </p>
-                                )}
-                            </div>
-
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between gap-2">
                                     <Label htmlFor="supplier_id">Supplier</Label>
@@ -135,6 +113,7 @@ export default function ItemCreate({ suppliers, warehouses }: Props) {
                                 <Label htmlFor="item_description">Description</Label>
                                 <Input
                                     id="item_description"
+                                    autoFocus
                                     value={data.item_description}
                                     onChange={(event) => setData('item_description', event.target.value)}
                                     aria-invalid={Boolean(error.item_description)}
@@ -154,7 +133,6 @@ export default function ItemCreate({ suppliers, warehouses }: Props) {
                                         Optional
                                     </Badge>
                                 </CardTitle>
-                                <CardDescription>Record starting quantities by warehouse. You can also add stock later.</CardDescription>
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 <Button type="button" variant="outline" size="sm" onClick={() => setWarehouseDialogOpen(true)}>
@@ -207,13 +185,14 @@ export default function ItemCreate({ suppliers, warehouses }: Props) {
                                             <Input
                                                 id={`quantity-${index}`}
                                                 type="number"
-                                                min={0}
+                                                min={1}
+                                                max={500}
                                                 step={1}
                                                 inputMode="numeric"
                                                 value={stock.quantity}
                                                 onChange={(event) => setStock(index, 'quantity', event.target.value)}
                                                 aria-invalid={Boolean(error[`stocks.${index}.quantity`])}
-                                                placeholder="0"
+                                                placeholder="1 to 500"
                                             />
                                             {error[`stocks.${index}.quantity`] && (
                                                 <p className="text-destructive text-sm">{error[`stocks.${index}.quantity`]}</p>
