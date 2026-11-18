@@ -2,8 +2,9 @@ import { Link, usePage } from '@inertiajs/react';
 import { PropsWithChildren } from 'react';
 
 export default function InventoryShell({ title, children }: PropsWithChildren<{ title: string }>) {
-    const { props } = usePage<{ flash?: { success?: string } }>();
+    const { props } = usePage<{ flash?: { success?: string; error?: string } }>();
     const success = props.flash?.success;
+    const error = props.flash?.error;
 
     return (
         <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -13,6 +14,12 @@ export default function InventoryShell({ title, children }: PropsWithChildren<{ 
                     <Link href="/items" className="text-blue-600 hover:underline">
                         Items
                     </Link>
+                    <Link href="/suppliers" className="text-blue-600 hover:underline">
+                        Suppliers
+                    </Link>
+                    <Link href="/warehouses" className="text-blue-600 hover:underline">
+                        Warehouses
+                    </Link>
                     <Link href="/transfers" className="text-blue-600 hover:underline">
                         Stock Transfers
                     </Link>
@@ -21,6 +28,11 @@ export default function InventoryShell({ title, children }: PropsWithChildren<{ 
             <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                 <h1 className="mb-4 text-2xl font-bold">{title}</h1>
                 {success && <div className="mb-4 rounded border border-green-300 bg-green-50 px-4 py-2 text-green-800">{success}</div>}
+                {error && (
+                    <div role="alert" className="mb-4 rounded border border-red-300 bg-red-50 px-4 py-2 text-red-800">
+                        {error}
+                    </div>
+                )}
                 {children}
             </main>
         </div>

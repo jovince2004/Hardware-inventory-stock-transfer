@@ -24,8 +24,8 @@ Route::middleware(['auth'])->group(function () {
 Route::resource('items', ItemController::class)
     ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
 
-Route::post('suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
-Route::post('warehouses', [WarehouseController::class, 'store'])->name('warehouses.store');
+Route::resource('suppliers', SupplierController::class)->only(['index', 'store', 'update', 'destroy']);
+Route::resource('warehouses', WarehouseController::class)->only(['index', 'store', 'update', 'destroy']);
 
 Route::resource('transfers', StockTransferController::class)
     ->parameters(['transfers' => 'transfer'])

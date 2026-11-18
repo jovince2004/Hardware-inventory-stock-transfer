@@ -19,6 +19,38 @@ class ItemsTest extends TestCase
         $this->assertDatabaseHas('suppliers', ['name' => 'Acme Supply']);
     }
 
+    public function test_supplier_name_rejects_unstructured_input(): void
+    {
+        $this->post('/suppliers', ['name' => ' dhgauwerhb234 '])
+            ->assertSessionHasErrors('name');
+
+        $this->assertDatabaseCount('suppliers', 0);
+    }
+
+    public function test_item_description_rejects_unstructured_input_on_create_and_update(): void
+    {
+        $supplier = Supplier::create(['name' => 'Acme Supply']);
+
+        $this->post('/items', [
+            'item_description' => ' dsjbasgbasdvnjbefg ',
+            'supplier_id' => $supplier->id,
+        ])->assertSessionHasErrors('item_description');
+
+        $this->assertDatabaseMissing('items', ['item_description' => 'dsjbasgbasdvnjbefg']);
+
+        $item = Item::create([
+            'item_code' => 'HW-TEST-1',
+            'item_description' => 'Wireless keyboard',
+            'supplier_id' => $supplier->id,
+        ]);
+
+        $this->put("/items/{$item->id}", [
+            'item_description' => ' dsjbasgbasdvnjbefg ',
+        ])->assertSessionHasErrors('item_description');
+
+        $this->assertSame('Wireless keyboard', $item->fresh()->item_description);
+    }
+
     public function test_warehouse_can_be_created_from_the_item_form(): void
     {
         $this->post('/warehouses', [
