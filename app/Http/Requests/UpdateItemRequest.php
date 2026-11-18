@@ -17,6 +17,10 @@ class UpdateItemRequest extends FormRequest
         if ($this->has('item_code')) {
             $this->merge(['item_code' => strtoupper(trim((string) $this->item_code))]);
         }
+        $description = $this->input('item_description');
+        if (is_string($description)) {
+            $this->merge(['item_description' => trim(strip_tags($description))]);
+        }
     }
 
     public function rules(): array
@@ -26,7 +30,7 @@ class UpdateItemRequest extends FormRequest
 
         return [
             'item_code'        => ['sometimes', 'string', 'max:30', Rule::unique('items', 'item_code')->ignore($id)],
-            'item_description' => ['sometimes', 'string', 'max:255'],
+            'item_description' => ['sometimes', 'required', 'string', 'max:255', 'not_regex:/^[a-z]{10,}\d*$/'],
             'supplier_id'      => ['sometimes', 'integer', 'exists:suppliers,id'],
         ];
     }
@@ -35,6 +39,7 @@ class UpdateItemRequest extends FormRequest
     {
         return [
             'item_code.unique'   => 'Another item already uses this code.',
+            'item_description.not_regex' => 'Please enter a readable item description instead of a random string.',
             'supplier_id.exists' => 'The selected supplier does not exist.',
         ];
     }

@@ -50,16 +50,6 @@ export default function ItemEdit({ item, suppliers }: Props) {
                         </CardHeader>
                         <CardContent className="grid gap-5 sm:grid-cols-2">
                             <div className="space-y-2">
-                                <Label htmlFor="item_code">Item code</Label>
-                                <Input
-                                    id="item_code"
-                                    value={data.item_code}
-                                    onChange={(event) => setData('item_code', event.target.value)}
-                                    aria-invalid={Boolean(errors.item_code)}
-                                />
-                                {errors.item_code && <p className="text-destructive text-sm">{errors.item_code}</p>}
-                            </div>
-                            <div className="space-y-2">
                                 <Label htmlFor="supplier_id">Supplier</Label>
                                 <Select value={data.supplier_id} onValueChange={(value) => setData('supplier_id', value)}>
                                     <SelectTrigger id="supplier_id" aria-invalid={Boolean(errors.supplier_id)}>
