@@ -64,9 +64,7 @@ export default function SupplierIndex({ suppliers }: Props) {
             <div className="space-y-6">
                 <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
                     <div className="space-y-1">
-                        <p className="text-muted-foreground text-sm font-medium">Inventory management</p>
-                        <h2 className="text-2xl font-semibold tracking-tight">Supplier dashboard</h2>
-                        <p className="text-muted-foreground text-sm">Manage suppliers and their item assignments.</p>
+                        <p className="text-muted-foreground text-sm font-medium">Management Suppliers</p>
                     </div>
                     <Button onClick={openCreate}>
                         <Plus aria-hidden="true" />

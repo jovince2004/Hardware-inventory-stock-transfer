@@ -89,10 +89,6 @@ export default function ItemCreate({ suppliers, warehouses }: Props) {
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between gap-2">
                                     <Label htmlFor="supplier_id">Supplier</Label>
-                                    <Button type="button" variant="link" size="sm" className="h-auto p-0" onClick={() => setSupplierDialogOpen(true)}>
-                                        <Plus aria-hidden="true" />
-                                        Add supplier
-                                    </Button>
                                 </div>
                                 <Select value={data.supplier_id} onValueChange={(value) => setData('supplier_id', value)}>
                                     <SelectTrigger id="supplier_id" aria-invalid={Boolean(error.supplier_id)}>
