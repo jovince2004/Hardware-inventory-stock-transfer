@@ -32,15 +32,21 @@ class StockTransferController extends Controller
     }
 
     /** Show the form for creating a new resource. */
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return Inertia::render('transfer/create', $this->stockTransferService->createFormData());
+        return Inertia::render('transfer/create', [
+            ...$this->stockTransferService->createFormData(),
+            'approvedBy' => $request->user()->name,
+        ]);
     }
 
     /** Store a newly created resource in storage. */
     public function store(StoreStockTransferRequest $request): RedirectResponse
     {
-        $this->stockTransferService->create($request->validated());
+        $data = $request->validated();
+        $data['approved_by_staff'] = $request->user()->name;
+
+        $this->stockTransferService->create($data);
 
         return redirect()->route('transfers.index')->with('success', 'Stock transfer completed.');
     }

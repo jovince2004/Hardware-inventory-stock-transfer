@@ -25,7 +25,7 @@ class ItemService
 
     public function paginate(?string $search = null, int $perPage = 15): LengthAwarePaginator
     {
-        $page = Item::with('supplier')                 // eager loading
+        $page = Item::with('supplier:id,name')
             ->whereNull('archived_at')
             ->searchData($search)
             ->latestFirst()
@@ -43,7 +43,7 @@ class ItemService
 
     public function findActive(int $id): Item
     {
-        $item = Item::with('supplier')
+        $item = Item::with('supplier:id,name')
             ->whereNull('archived_at')
             ->findOrFail($id);
 
@@ -52,7 +52,7 @@ class ItemService
 
     public function findActiveForEdit(int $id): Item
     {
-        return Item::with('supplier')
+        return Item::with('supplier:id,name')
             ->whereNull('archived_at')
             ->findOrFail($id);
     }

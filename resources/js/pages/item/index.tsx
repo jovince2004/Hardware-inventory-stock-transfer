@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Head, Link, router } from '@inertiajs/react';
-import { Archive, Boxes, Eye, Package, Pencil, Plus, Search, Truck, Warehouse } from 'lucide-react';
+import { Archive, Eye, Package, Pencil, Plus, Search } from 'lucide-react';
 import { FormEvent, useState } from 'react';
 
 type Item = {
@@ -19,17 +19,9 @@ type Item = {
 type Props = {
     items: { data: Item[]; links: PageLink[]; from: number | null; to: number | null; total: number };
     filters: { search: string };
-    summary: { items: number; suppliers: number; warehouses: number; stockUnits: number };
 };
 
-const metrics = [
-    { key: 'items', label: 'Total items', icon: Package, format: (value: number) => value.toLocaleString(), action: '', href: '/items/create' },
-    { key: 'stockUnits', label: 'Units in stock', icon: Boxes, format: (value: number) => value.toLocaleString(), action: '', href: '/transfers/create' },
-    { key: 'suppliers', label: 'Suppliers', icon: Truck, format: (value: number) => value.toLocaleString(), action: '', href: '/suppliers' },
-    { key: 'warehouses', label: 'Warehouses', icon: Warehouse, format: (value: number) => value.toLocaleString(), action: '', href: '/warehouses' },
-] as const;
-
-export default function ItemIndex({ items, filters, summary }: Props) {
+export default function ItemIndex({ items, filters }: Props) {
     const [search, setSearch] = useState(filters.search);
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
@@ -49,7 +41,7 @@ export default function ItemIndex({ items, filters, summary }: Props) {
             <div className="space-y-6">
                 <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
                     <div className="space-y-1">
-                        <p className="text-muted-foreground text-sm font-medium">Inventory overview</p>
+                        <p className="text-muted-foreground text-sm font-medium">Item catalog</p>
                     </div>
                     <Button asChild>
                         <Link href="/items/create">
@@ -57,26 +49,6 @@ export default function ItemIndex({ items, filters, summary }: Props) {
                             Add item
                         </Link>
                     </Button>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    {metrics.map(({ key, label, icon: Icon, format, action, href }) => (
-                        <Card key={key}>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-muted-foreground text-sm font-medium">{label}</CardTitle>
-                                <Icon aria-hidden="true" className="text-muted-foreground size-4" />
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <p className="text-2xl font-bold">{format(summary[key])}</p>
-                                <Button asChild size="sm" variant="outline" className="w-full">
-                                    <Link href={href}>
-                                        <Plus aria-hidden="true" />
-                                        {action}
-                                    </Link>
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    ))}
                 </div>
 
                 <Card>

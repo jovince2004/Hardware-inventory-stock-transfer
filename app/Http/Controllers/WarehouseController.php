@@ -23,6 +23,7 @@ class WarehouseController extends Controller
         ]);
     }
 
+
     public function store(StoreWarehouseRequest $request): RedirectResponse
     {
         $data = $request->validated();

@@ -27,7 +27,6 @@ class ItemController extends Controller
             'filters' => [
                 'search' => is_string($search) ? $search : '',
             ],
-            'summary' => $this->itemService->dashboardSummary(),
         ]);
     }
 

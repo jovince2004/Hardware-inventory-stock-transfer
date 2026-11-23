@@ -1,3 +1,4 @@
+import AppSidebarLayout from '@/layouts/app/app-sidebar-layout';
 import { Link, usePage } from '@inertiajs/react';
 import { PropsWithChildren } from 'react';
 
@@ -7,25 +8,8 @@ export default function InventoryShell({ title, children }: PropsWithChildren<{ 
     const error = props.flash?.error;
 
     return (
-        <div className="min-h-screen bg-gray-50 text-gray-900">
-            <nav className="border-b bg-white">
-                <div className="mx-auto flex max-w-5xl items-center gap-6 px-4 py-3">
-                    <span className="font-semibold">Hardware Store</span>
-                    <Link href="/items" className="text-blue-600 hover:underline">
-                        Items
-                    </Link>
-                    <Link href="/suppliers" className="text-blue-600 hover:underline">
-                        Suppliers
-                    </Link>
-                    <Link href="/warehouses" className="text-blue-600 hover:underline">
-                        Warehouses
-                    </Link>
-                    <Link href="/transfers" className="text-blue-600 hover:underline">
-                        Stock Transfers
-                    </Link>
-                </div>
-            </nav>
-            <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <AppSidebarLayout breadcrumbs={[{ title: 'Hardware Store', href: '/items' }, { title }]}>
+            <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                 <h1 className="mb-4 text-2xl font-bold">{title}</h1>
                 {success && <div className="mb-4 rounded border border-green-300 bg-green-50 px-4 py-2 text-green-800">{success}</div>}
                 {error && (
@@ -35,7 +19,7 @@ export default function InventoryShell({ title, children }: PropsWithChildren<{ 
                 )}
                 {children}
             </main>
-        </div>
+        </AppSidebarLayout>
     );
 }
 

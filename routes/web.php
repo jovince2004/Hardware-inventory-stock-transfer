@@ -5,6 +5,7 @@ use App\Http\Controllers\ItemController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\StockTransferController;
 use App\Http\Controllers\WarehouseController;
+use App\Services\ItemService;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -16,8 +17,10 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('dashboard', function () {
-        return redirect()->route('items.index');
+    Route::get('dashboard', function (ItemService $itemService) {
+        return Inertia::render('dashboard', [
+            'summary' => $itemService->dashboardSummary(),
+        ]);
     })->name('dashboard');
 });
 
@@ -27,9 +30,11 @@ Route::resource('items', ItemController::class)
 Route::resource('suppliers', SupplierController::class)->only(['index', 'store', 'update', 'destroy']);
 Route::resource('warehouses', WarehouseController::class)->only(['index', 'store', 'update', 'destroy']);
 
-Route::resource('transfers', StockTransferController::class)
-    ->parameters(['transfers' => 'transfer'])
-    ->only(['index', 'create', 'store', 'update']);
+Route::middleware(['auth'])->group(function () {
+    Route::resource('transfers', StockTransferController::class)
+        ->parameters(['transfers' => 'transfer'])
+        ->only(['index', 'create', 'store', 'update']);
+});
 
 
 

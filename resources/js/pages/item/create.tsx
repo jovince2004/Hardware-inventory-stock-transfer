@@ -64,7 +64,7 @@ export default function ItemCreate({ suppliers, warehouses }: Props) {
 
     return (
         <InventoryShell title="Add item">
-            <Head title="Add item" />
+            <Head  title="Add item" />
 
             <div className="mx-auto max-w-3xl space-y-6">
                 <Button asChild variant="ghost" className="-ml-3">

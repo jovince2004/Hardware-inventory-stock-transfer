@@ -38,7 +38,6 @@ class StoreStockTransferRequest extends FormRequest
             'target_warehouse_id' => ['required', 'integer', 'exists:warehouses,id', 'different:source_warehouse_id'],
             'transfer_date'       => ['required', 'date', 'before_or_equal:today'],
             'transfer_reason'     => ['required', 'string', 'max:255'],
-            'approved_by_staff'   => ['required', 'string', 'max:255'],
             'items'                  => ['required', 'array', 'min:1'],
             'items.*.item_code'      => ['required', 'string', 'distinct'],
             'items.*.quantity'       => ['required', 'integer', 'min:1'],

@@ -70,13 +70,7 @@ export default function WarehouseIndex({ warehouses }: Props) {
             <div className="space-y-6">
                 <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
                     <div className="space-y-1">
-<<<<<<< HEAD
-                        <p className="text-muted-foreground text-sm font-medium">Inventory management</p>
-                        <h2 className="text-2xl font-semibold tracking-tight">Warehouse dashboard</h2>
                         <p className="text-muted-foreground text-sm">Manage warehouse locations and review transfer activity.</p>
-=======
-                        <p className="text-muted-foreground text-sm">Manage Warehouses.</p>
->>>>>>> f8d19867cdb18c751737ebaec6838da910cb6ea4
                     </div>
                     <Button onClick={openCreate}>
                         <Plus aria-hidden="true" />

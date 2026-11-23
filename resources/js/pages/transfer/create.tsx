@@ -5,9 +5,10 @@ import InventoryShell, { btnCls, Err, inputCls } from '@/components/inventory-sh
 type Props = {
     warehouses: { id: number; name: string }[];
     items: { id: number; item_code: string; item_description: string }[];
+    approvedBy: string;
 };
 
-export default function TransferCreate({ warehouses, items }: Props) {
+export default function TransferCreate({ warehouses, items, approvedBy }: Props) {
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const { data, setData, post, processing, errors } = useForm({
@@ -15,7 +16,7 @@ export default function TransferCreate({ warehouses, items }: Props) {
         target_warehouse_id: '',
         transfer_date: today,
         transfer_reason: '',
-        approved_by_staff: '',
+        approved_by_staff: approvedBy,
         items: [{ item_code: '', quantity: '' }] as { item_code: string; quantity: string }[],
     });
     const err = errors as Record<string, string>;
@@ -59,7 +60,7 @@ export default function TransferCreate({ warehouses, items }: Props) {
                     </div>
                     <div>
                         <label className="mb-1 block font-medium">Approved by</label>
-                        <input className={inputCls} value={data.approved_by_staff} onChange={(e) => setData('approved_by_staff', e.target.value)} />
+                        <input className={inputCls} value={data.approved_by_staff} readOnly />
                         <Err msg={err.approved_by_staff} />
                     </div>
                 </div>

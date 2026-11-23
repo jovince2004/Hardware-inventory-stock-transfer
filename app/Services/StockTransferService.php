@@ -24,7 +24,11 @@ class StockTransferService
 
     public function paginate(?string $search = null, int $perPage = 15): LengthAwarePaginator
     {
-        return StockTransfer::with(['source', 'target', 'details.item'])   // eager loading
+        return StockTransfer::with([
+                'source:id,name',
+                'target:id,name',
+                'details.item:id,item_code,item_description',
+            ])
             ->searchData($search)
             ->latestFirst()
             ->paginate($perPage)
@@ -120,9 +124,6 @@ class StockTransferService
             if (isset($data['transfer_reason'])) {
                 $clean['transfer_reason'] = $this->sanitizeText($data['transfer_reason']);
             }
-            if (isset($data['approved_by_staff'])) {
-                $clean['approved_by_staff'] = $this->sanitizeText($data['approved_by_staff']);
-            }
 
             $transfer->update($clean);
 
@@ -135,15 +136,26 @@ class StockTransferService
     /** Stock of one item in one warehouse = completed IN - completed OUT. */
     private function availableStock(int $itemId, int $warehouseId): int
     {
-        $base = fn () => DB::table('transfer_details as d')
+        $quantity = DB::table('transfer_details as d')
             ->join('stock_transfers as t', 't.id', '=', 'd.stock_transfer_id')
             ->where('t.transfer_status', 'completed')
-            ->where('d.item_id', $itemId);
+            ->where('d.item_id', $itemId)
+            ->where(function ($query) use ($warehouseId) {
+                $query->where('t.target_warehouse_id', $warehouseId)
+                    ->orWhere('t.source_warehouse_id', $warehouseId);
+            })
+            ->select(DB::raw(
+                'COALESCE(SUM(CASE
+                    WHEN t.target_warehouse_id = '.(int) $warehouseId.' THEN d.quantity_transferred
+                    ELSE 0
+                END) - SUM(CASE
+                    WHEN t.source_warehouse_id = '.(int) $warehouseId.' THEN d.quantity_transferred
+                    ELSE 0
+                END), 0) as quantity'
+            ))
+            ->value('quantity');
 
-        $in  = (int) $base()->where('t.target_warehouse_id', $warehouseId)->sum('d.quantity_transferred');
-        $out = (int) $base()->where('t.source_warehouse_id', $warehouseId)->sum('d.quantity_transferred');
-
-        return $in - $out;
+        return (int) $quantity;
     }
 
     /* -------------------------- SANITIZERS -------------------------- */

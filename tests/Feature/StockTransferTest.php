@@ -3,14 +3,32 @@
 use App\Models\Item;
 use App\Models\Supplier;
 use App\Models\StockTransfer;
+use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class StockTransferTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->actingAs(User::factory()->create(['name' => 'Transfer Operator']));
+    }
+
+    public function test_create_form_uses_the_authenticated_user_as_approver(): void
+    {
+        $this->get('/transfers/create')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('transfer/create')
+                ->where('approvedBy', 'Transfer Operator'));
+    }
 
     public function test_transfer_can_be_created_from_opening_stock(): void
     {
@@ -43,6 +61,7 @@ class StockTransferTest extends TestCase
         $this->assertDatabaseHas('stock_transfers', [
             'source_warehouse_id' => $source->id,
             'target_warehouse_id' => $target->id,
+            'approved_by_staff' => 'Transfer Operator',
             'transfer_status' => 'completed',
         ]);
     }
