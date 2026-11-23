@@ -32,21 +32,21 @@ export default function TransferCreate({ warehouses, items, approvedBy }: Props)
     return (
         <InventoryShell title="New Stock Transfer">
             <Head title="New Transfer" />
-            <form onSubmit={submit} className="max-w-2xl space-y-4 rounded border bg-white p-6">
-                <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={submit} className="max-w-2xl space-y-4 rounded border bg-white dark:bg-black p-6 ">
+                <div className="grid grid-cols-2 gap-4 dark:bg-black">
                     <div>
                         <label className="mb-1 block font-medium">Source warehouse</label>
                         <select className={inputCls} value={data.source_warehouse_id} onChange={(e) => setData('source_warehouse_id', e.target.value)}>
-                            <option value="">Select</option>
-                            {warehouses.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                            <option className="dark:bg-black" value="">Select</option>
+                            {warehouses.map((w) => <option className="dark:bg-black" key={w.id} value={w.id}>{w.name}</option>)}
                         </select>
                         <Err msg={err.source_warehouse_id} />
                     </div>
                     <div>
                         <label className="mb-1 block font-medium">Target warehouse</label>
                         <select className={inputCls} value={data.target_warehouse_id} onChange={(e) => setData('target_warehouse_id', e.target.value)}>
-                            <option value="">Select</option>
-                            {warehouses.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                            <option className="dark:bg-black" value="">Select</option>
+                            {warehouses.map((w) => <option className="dark:bg-black" key={w.id} value={w.id}>{w.name}</option>)}
                         </select>
                         <Err msg={err.target_warehouse_id} />
                     </div>
@@ -80,12 +80,12 @@ export default function TransferCreate({ warehouses, items, approvedBy }: Props)
                         </button>
                     </div>
                     {data.items.map((line, i) => (
-                        <div key={i} className="mb-2 flex gap-2">
+                        <div key={i} className="mb-2 flex gap-2 dark:bg-black">
                             <div className="flex-1">
                                 <select className={inputCls} value={line.item_code} onChange={(e) => setLine(i, 'item_code', e.target.value)}>
-                                    <option value="">Select item</option>
+                                    <option className="dark:bg-black" value="">Select item</option>
                                     {items.map((it) => (
-                                        <option key={it.id} value={it.item_code}>{it.item_code} - {it.item_description}</option>
+                                        <option className="dark:bg-black" key={it.id} value={it.item_code}>{it.item_code} - {it.item_description}</option>
                                     ))}
                                 </select>
                                 <Err msg={err[`items.${i}.item_code`]} />

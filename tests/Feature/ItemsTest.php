@@ -2,6 +2,7 @@
 
 use App\Models\Item;
 use App\Models\Supplier;
+use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -89,7 +90,7 @@ class ItemsTest extends TestCase
         ]);
     }
 
-    public function test_item_dashboard_displays_inventory_totals(): void
+    public function test_dashboard_displays_inventory_totals_and_item_list_displays_items(): void
     {
         $supplier = Supplier::create(['name' => 'Acme Supply']);
         $warehouse = Warehouse::create(['name' => 'Main Warehouse']);
@@ -106,15 +107,21 @@ class ItemsTest extends TestCase
         $item = Item::where('item_description', 'Wireless keyboard')->firstOrFail();
         $this->assertMatchesRegularExpression('/^HW-\d{6,}$/', $item->item_code);
 
+        $this->actingAs(User::factory()->create())
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('dashboard')
+                ->where('summary.items', 1)
+                ->where('summary.suppliers', 1)
+                ->where('summary.warehouses', 1)
+                ->where('summary.stockUnits', 8));
+
         $this->get('/items')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('item/index')
                 ->has('items.data', 1)
-                ->where('summary.items', 1)
-                ->where('summary.suppliers', 1)
-                ->where('summary.warehouses', 1)
-                ->where('summary.stockUnits', 8)
                 ->where('items.data.0.item_code', $item->item_code)
                 ->where('items.data.0.stock.0.quantity', 8));
     }
@@ -195,7 +202,13 @@ class ItemsTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('item/index')
-                ->has('items.data', 0)
+                ->has('items.data', 0));
+
+        $this->actingAs(User::factory()->create())
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('dashboard')
                 ->where('summary.items', 0));
 
         $this->get("/items/{$item->id}")->assertNotFound();

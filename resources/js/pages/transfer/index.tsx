@@ -44,9 +44,9 @@ export default function TransferIndex({ transfers, filters }: Props) {
                 <Link href="/transfers/create" className={btnCls}>+ New Transfer</Link>
             </div>
 
-            <div className="overflow-x-auto rounded border bg-white">
-                <table className="w-full text-left text-sm">
-                    <thead className="bg-gray-100">
+            <div className="overflow-x-auto rounded border bg-white dark:bg-black">
+                <table className="w-full text-left text-sm text-gray-700 dark:text-white">
+                    <thead className="bg-gray-100 dark:bg-gray-800">
                         <tr>
                             <th className="p-3">Date</th>
                             <th className="p-3">From → To</th>
