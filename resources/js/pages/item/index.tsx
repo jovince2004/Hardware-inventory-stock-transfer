@@ -23,10 +23,10 @@ type Props = {
 };
 
 const metrics = [
-    { key: 'items', label: 'Total items', icon: Package, format: (value: number) => value.toLocaleString() },
-    { key: 'stockUnits', label: 'Units in stock', icon: Boxes, format: (value: number) => value.toLocaleString() },
-    { key: 'suppliers', label: 'Suppliers', icon: Truck, format: (value: number) => value.toLocaleString() },
-    { key: 'warehouses', label: 'Warehouses', icon: Warehouse, format: (value: number) => value.toLocaleString() },
+    { key: 'items', label: 'Total items', icon: Package, format: (value: number) => value.toLocaleString(), action: '', href: '/items/create' },
+    { key: 'stockUnits', label: 'Units in stock', icon: Boxes, format: (value: number) => value.toLocaleString(), action: '', href: '/transfers/create' },
+    { key: 'suppliers', label: 'Suppliers', icon: Truck, format: (value: number) => value.toLocaleString(), action: '', href: '/suppliers' },
+    { key: 'warehouses', label: 'Warehouses', icon: Warehouse, format: (value: number) => value.toLocaleString(), action: '', href: '/warehouses' },
 ] as const;
 
 export default function ItemIndex({ items, filters, summary }: Props) {
@@ -50,8 +50,6 @@ export default function ItemIndex({ items, filters, summary }: Props) {
                 <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
                     <div className="space-y-1">
                         <p className="text-muted-foreground text-sm font-medium">Inventory overview</p>
-                        <h2 className="text-2xl font-semibold tracking-tight">Item dashboard</h2>
-                        <p className="text-muted-foreground text-sm">Manage your catalog, stock levels, and suppliers.</p>
                     </div>
                     <Button asChild>
                         <Link href="/items/create">
@@ -62,14 +60,20 @@ export default function ItemIndex({ items, filters, summary }: Props) {
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    {metrics.map(({ key, label, icon: Icon, format }) => (
+                    {metrics.map(({ key, label, icon: Icon, format, action, href }) => (
                         <Card key={key}>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-muted-foreground text-sm font-medium">{label}</CardTitle>
                                 <Icon aria-hidden="true" className="text-muted-foreground size-4" />
                             </CardHeader>
-                            <CardContent>
+                            <CardContent className="space-y-4">
                                 <p className="text-2xl font-bold">{format(summary[key])}</p>
+                                <Button asChild size="sm" variant="outline" className="w-full">
+                                    <Link href={href}>
+                                        <Plus aria-hidden="true" />
+                                        {action}
+                                    </Link>
+                                </Button>
                             </CardContent>
                         </Card>
                     ))}
