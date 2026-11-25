@@ -117,8 +117,8 @@ class SupplierWarehouseTest extends TestCase
     public function test_warehouse_name_and_location_reject_random_input_on_create_and_update(): void
     {
         $this->post('/warehouses', [
-            'name' => ' dhgauwerhb234 ',
-            'location' => ' dsjbasgbasdvnjbefg ',
+            'name' => ' eali;eufa;jalkrgr ',
+            'location' => ' a\'oerugpaoiurgafgarfg ',
             'return_to' => 'warehouses.index',
         ])->assertSessionHasErrors(['name', 'location']);
 
@@ -127,8 +127,8 @@ class SupplierWarehouseTest extends TestCase
         $warehouse = Warehouse::create(['name' => 'Main Warehouse', 'location' => 'Building A']);
 
         $this->put("/warehouses/{$warehouse->id}", [
-            'name' => ' dhgauwerhb234 ',
-            'location' => ' dsjbasgbasdvnjbefg ',
+            'name' => ' EALI;EUFA;JALKRGR ',
+            'location' => ' A\'OERUGPAOIURGAFGARFG ',
         ])->assertSessionHasErrors(['name', 'location']);
 
         $this->assertDatabaseHas('warehouses', [

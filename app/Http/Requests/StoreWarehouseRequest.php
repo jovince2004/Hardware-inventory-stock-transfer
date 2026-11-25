@@ -30,8 +30,8 @@ class StoreWarehouseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255', 'not_regex:/^[a-z]{10,}\d*$/', 'unique:warehouses,name'],
-            'location' => ['nullable', 'string', 'max:255', 'not_regex:/^[a-z]{10,}\d*$/'],
+            'name' => ['required', 'string', 'max:255', 'not_regex:/^(?=(?:[^a-z]*[a-z]){10})[a-z0-9\p{P}\p{S}]+$/iu', 'unique:warehouses,name'],
+            'location' => ['nullable', 'string', 'max:255', 'not_regex:/^(?=(?:[^a-z]*[a-z]){10})[a-z0-9\p{P}\p{S}]+$/iu'],
             'return_to' => ['sometimes', 'string', Rule::in(['items.create', 'warehouses.index'])],
         ];
     }
@@ -42,5 +42,10 @@ class StoreWarehouseRequest extends FormRequest
             'name.not_regex' => 'Please enter a readable warehouse name instead of a random string.',
             'location.not_regex' => 'Please enter a readable location instead of a random string.',
         ];
+    }
+
+    public function successMessage(): string
+    {
+        return 'Warehouse created successfully.';
     }
 }

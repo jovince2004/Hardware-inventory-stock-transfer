@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSupplierRequest;
 use App\Http\Requests\UpdateSupplierRequest;
+use App\Http\Requests\DeleteSupplierRequest;
 use App\Models\Supplier;
 use App\Services\SupplierService;
 use Illuminate\Http\RedirectResponse;
@@ -31,23 +32,23 @@ class SupplierController extends Controller
 
         $this->supplierService->create($data);
 
-        return redirect()->route($returnTo)->with('success', 'Supplier created successfully.');
+        return redirect()->route($returnTo)->with('success', $request->successMessage());
     }
 
     public function update(UpdateSupplierRequest $request, Supplier $supplier): RedirectResponse
     {
         $this->supplierService->update($supplier, $request->validated());
 
-        return redirect()->route('suppliers.index')->with('success', 'Supplier updated successfully.');
+        return redirect()->route('suppliers.index')->with('success', $request->successMessage());
     }
 
-    public function destroy(Supplier $supplier): RedirectResponse
+    public function destroy(DeleteSupplierRequest $request, Supplier $supplier): RedirectResponse
     {
         if (! $this->supplierService->delete($supplier)) {
             return redirect()->route('suppliers.index')
-                ->with('error', 'This supplier cannot be deleted because it is assigned to items.');
+                ->with('error', $request->failureMessage());
         }
 
-        return redirect()->route('suppliers.index')->with('success', 'Supplier deleted successfully.');
+        return redirect()->route('suppliers.index')->with('success', $request->successMessage());
     }
 }

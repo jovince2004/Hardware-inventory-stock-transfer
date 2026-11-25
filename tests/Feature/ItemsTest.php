@@ -32,12 +32,20 @@ class ItemsTest extends TestCase
     {
         $supplier = Supplier::create(['name' => 'Acme Supply']);
 
-        $this->post('/items', [
-            'item_description' => ' dsjbasgbasdvnjbefg ',
-            'supplier_id' => $supplier->id,
-        ])->assertSessionHasErrors('item_description');
+        foreach ([
+            ' dsjbasgbasdvnjbefg ',
+            ' yehbaefg3eh ',
+            ' seoajr;klbmateh ',
+            ' ODFGIAFJPRFMARFH ',
+        ] as $description) {
+            $this->post('/items', [
+                'item_description' => $description,
+                'supplier_id' => $supplier->id,
+            ])->assertSessionHasErrors('item_description');
+        }
 
         $this->assertDatabaseMissing('items', ['item_description' => 'dsjbasgbasdvnjbefg']);
+        $this->assertDatabaseCount('items', 0);
 
         $item = Item::create([
             'item_code' => 'HW-TEST-1',
@@ -50,6 +58,35 @@ class ItemsTest extends TestCase
         ])->assertSessionHasErrors('item_description');
 
         $this->assertSame('Wireless keyboard', $item->fresh()->item_description);
+    }
+
+    public function test_item_description_is_trimmed_and_sanitized_when_created(): void
+    {
+        $supplier = Supplier::create(['name' => 'Acme Supply']);
+
+        $this->post('/items', [
+            'item_description' => '   ',
+            'supplier_id' => $supplier->id,
+        ])->assertSessionHasErrors('item_description');
+
+        $this->post('/items', [
+            'item_description' => '  <b>Wireless keyboard</b>  ',
+            'supplier_id' => $supplier->id,
+        ])->assertRedirect('/items');
+
+        $item = Item::where('item_description', 'Wireless keyboard')->firstOrFail();
+
+        $this->put("/items/{$item->id}", [
+            'item_description' => '  <i> USB-C keyboard </i>  ',
+        ])->assertRedirect('/items');
+
+        $this->assertSame('USB-C keyboard', $item->fresh()->item_description);
+
+        $this->put("/items/{$item->id}", [
+            'item_description' => '   ',
+        ])->assertSessionHasErrors('item_description');
+
+        $this->assertSame('USB-C keyboard', $item->fresh()->item_description);
     }
 
     public function test_warehouse_can_be_created_from_the_item_form(): void

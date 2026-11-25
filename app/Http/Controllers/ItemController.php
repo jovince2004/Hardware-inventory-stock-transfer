@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreItemRequest;
 use App\Http\Requests\UpdateItemRequest;
+use App\Http\Requests\ArchiveItemRequest;
 use App\Services\ItemService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,17 +18,29 @@ class ItemController extends Controller
     ) {}
 
     /** Display a listing of the resource. */
-    public function index(Request $req): Response
+    public function index(Request $request): Response
     {
-        $search = $req->search;
-        $items = $this->itemService->paginate(is_string($search) ? $search : null);
+        $search = $request->query('search');
+        $search = $this->sanitizeSearch($search);
+        $items = $this->itemService->paginate($search);
 
         return Inertia::render('item/index', [
             'items'   => $items,
             'filters' => [
-                'search' => is_string($search) ? $search : '',
+                'search' => $search ?? '',
             ],
         ]);
+    }
+
+    private function sanitizeSearch(mixed $search): ?string
+    {
+        if (!is_string($search)) {
+            return null;
+        }
+
+        $clean = trim(strip_tags($search));
+
+        return $clean === '' ? null : substr($clean, 0, 100);
     }
 
     /** Show the form for creating a new resource. */
@@ -41,7 +54,7 @@ class ItemController extends Controller
     {
         $this->itemService->create($request->validated());
 
-        return redirect()->route('items.index')->with('success', 'Item created successfully.');
+        return redirect()->route('items.index')->with('success', $request->successMessage());
     }
 
     /** Display the specified resource. */
@@ -64,19 +77,19 @@ class ItemController extends Controller
     }
 
     /** Update the specified resource in storage. */
-    public function update(UpdateItemRequest $request, $id): RedirectResponse
+    public function update(UpdateItemRequest $request, int $id): RedirectResponse
     {
         $item = $this->itemService->findActiveForEdit((int) $id);
         $this->itemService->update($item, $request->validated());
 
-        return redirect()->route('items.index')->with('success', 'Item updated successfully.');
+        return redirect()->route('items.index')->with('success', $request->successMessage());
     }
 
     /** Archive the specified resource without removing its stock history. */
-    public function destroy(int $id): RedirectResponse
+    public function destroy(ArchiveItemRequest $request, int $id): RedirectResponse
     {
         $this->itemService->archive($id);
 
-        return redirect()->route('items.index')->with('success', 'Item archived successfully.');
+        return redirect()->route('items.index')->with('success', $request->successMessage());
     }
 }

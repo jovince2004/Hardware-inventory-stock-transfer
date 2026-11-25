@@ -34,4 +34,9 @@ class StoreSupplierRequest extends FormRequest
             'name.not_regex' => 'Please enter a readable supplier name instead of a random string.',
         ];
     }
+
+    public function successMessage(): string
+    {
+        return 'Supplier created successfully.';
+    }
 }

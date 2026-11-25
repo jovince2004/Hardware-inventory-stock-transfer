@@ -34,10 +34,10 @@ class UpdateWarehouseRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                'not_regex:/^[a-z]{10,}\d*$/',
+                'not_regex:/^(?=(?:[^a-z]*[a-z]){10})[a-z0-9\p{P}\p{S}]+$/iu',
                 Rule::unique('warehouses', 'name')->ignore($this->route('warehouse')),
             ],
-            'location' => ['sometimes', 'nullable', 'string', 'max:255', 'not_regex:/^[a-z]{10,}\d*$/'],
+            'location' => ['sometimes', 'nullable', 'string', 'max:255', 'not_regex:/^(?=(?:[^a-z]*[a-z]){10})[a-z0-9\p{P}\p{S}]+$/iu'],
         ];
     }
 
@@ -47,5 +47,10 @@ class UpdateWarehouseRequest extends FormRequest
             'name.not_regex' => 'Please enter a readable warehouse name instead of a random string.',
             'location.not_regex' => 'Please enter a readable location instead of a random string.',
         ];
+    }
+
+    public function successMessage(): string
+    {
+        return 'Warehouse updated successfully.';
     }
 }

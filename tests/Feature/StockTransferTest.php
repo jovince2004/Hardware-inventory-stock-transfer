@@ -47,6 +47,16 @@ class StockTransferTest extends TestCase
 
         $item = Item::where('item_description', 'Alloy pipe')->firstOrFail();
 
+        $this->post('/items', [
+            'item_description' => 'Steel bracket',
+            'supplier_id' => $supplier->id,
+            'stocks' => [
+                ['warehouse_id' => $source->id, 'quantity' => 4],
+            ],
+        ])->assertRedirect('/items');
+
+        $secondItem = Item::where('item_description', 'Steel bracket')->firstOrFail();
+
         $this->post('/transfers', [
             'source_warehouse_id' => $source->id,
             'target_warehouse_id' => $target->id,
@@ -55,8 +65,14 @@ class StockTransferTest extends TestCase
             'approved_by_staff' => 'Ako Eh',
             'items' => [
                 ['item_code' => $item->item_code, 'quantity' => 5],
+                ['item_code' => $secondItem->item_code, 'quantity' => 2],
             ],
-        ])->assertRedirect('/transfers');
+        ])->assertRedirect('/transfers')
+            ->assertSessionHas('success', 'Stock transfer completed.');
+
+        $transfer = StockTransfer::where('source_warehouse_id', $source->id)
+            ->where('target_warehouse_id', $target->id)
+            ->firstOrFail();
 
         $this->assertDatabaseHas('stock_transfers', [
             'source_warehouse_id' => $source->id,
@@ -64,6 +80,7 @@ class StockTransferTest extends TestCase
             'approved_by_staff' => 'Transfer Operator',
             'transfer_status' => 'completed',
         ]);
+        $this->assertCount(2, $transfer->details);
     }
 
     public function test_transfer_rejects_when_source_stock_is_insufficient(): void
@@ -94,7 +111,9 @@ class StockTransferTest extends TestCase
                     ['item_code' => $item->item_code, 'quantity' => 5],
                 ],
             ])
-            ->assertSessionHasErrors(['items']);
+            ->assertSessionHasErrors([
+                'items' => "Insufficient stock for {$item->item_code}: available 3, requested 5.",
+            ]);
     }
 
     public function test_transfer_reports_each_item_code_that_does_not_exist(): void
@@ -183,5 +202,41 @@ class StockTransferTest extends TestCase
         ]);
 
         $this->assertSame($transferCount, StockTransfer::count());
+    }
+
+    public function test_transfer_text_fields_are_sanitized_on_create_and_update(): void
+    {
+        $supplier = Supplier::create(['name' => 'Acme Supply']);
+        $source = Warehouse::create(['name' => 'Source Warehouse']);
+        $target = Warehouse::create(['name' => 'Target Warehouse']);
+
+        $this->post('/items', [
+            'item_description' => 'Sanitized transfer item',
+            'supplier_id' => $supplier->id,
+            'stocks' => [
+                ['warehouse_id' => $source->id, 'quantity' => 5],
+            ],
+        ]);
+
+        $item = Item::where('item_description', 'Sanitized transfer item')->firstOrFail();
+
+        $this->post('/transfers', [
+            'source_warehouse_id' => $source->id,
+            'target_warehouse_id' => $target->id,
+            'transfer_date' => Carbon::today()->toDateString(),
+            'transfer_reason' => '  <b>Emergency</b> relocation  ',
+            'items' => [
+                ['item_code' => '  <b>'.$item->item_code.'</b>  ', 'quantity' => 1],
+            ],
+        ])->assertRedirect('/transfers');
+
+        $transfer = StockTransfer::where('source_warehouse_id', $source->id)->firstOrFail();
+        $this->assertSame('Emergency relocation', $transfer->transfer_reason);
+
+        $this->put("/transfers/{$transfer->id}", [
+            'transfer_reason' => '  <i>Updated</i> reason  ',
+        ])->assertRedirect('/transfers');
+
+        $this->assertSame('Updated reason', $transfer->fresh()->transfer_reason);
     }
 }

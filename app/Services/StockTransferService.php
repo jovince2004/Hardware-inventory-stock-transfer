@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
+use App\Exceptions\StockTransferException;
 use App\Models\Item;
 use App\Models\StockTransfer;
 use App\Models\Warehouse;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 /**
  * ALL business logic for stock transfers lives here:
@@ -50,57 +50,88 @@ class StockTransferService
      * $data = [
      *   'source_warehouse_id' => 1, 'target_warehouse_id' => 2,
      *   'transfer_date' => '2026-10-27', 'transfer_reason' => 'Restock',
-     *   'approved_by_staff' => 'J. Cruz',
      *   'items' => [ ['item_code' => 'hm-001', 'quantity' => 5], ... ],
      * ]
+     * The authenticated approver is passed separately so client input cannot override it.
      */
-    public function create(array $data): StockTransfer
+    public function create(array $data, string $approvedBy): StockTransfer
     {
         $sourceId = (int) $data['source_warehouse_id'];
         $targetId = (int) $data['target_warehouse_id'];
 
         if ($sourceId === $targetId) {
-            throw ValidationException::withMessages([
-                'target_warehouse_id' => 'Source and target warehouse must be different.',
-            ]);
+            throw new StockTransferException(StockTransferException::SAME_WAREHOUSE);
         }
 
         // ONE atomic unit: any exception below rolls back everything.
-        return DB::transaction(function () use ($data, $sourceId, $targetId) {
+        return DB::transaction(function () use ($data, $sourceId, $targetId, $approvedBy) {
 
             // Lock the SOURCE warehouse row: concurrent transfers out of the same
             // warehouse now run one at a time, so stock can't be double-spent.
-            Warehouse::whereKey($sourceId)->lockForUpdate()->first();
+            Warehouse::whereKey($sourceId)->lockForUpdate()->firstOrFail();
+
+            $lines = [];
+            $requestedByCode = [];
+            if (empty($data['items'])) {
+                throw new StockTransferException(StockTransferException::ITEMS_REQUIRED);
+            }
+
+            foreach ($data['items'] as $line) {
+                $code = $this->sanitizeCode($line['item_code']);
+                $quantity = (int) $line['quantity'];
+                if ($quantity < 1) {
+                    throw new StockTransferException(
+                        StockTransferException::INVALID_QUANTITY,
+                        ['code' => $code]
+                    );
+                }
+
+                $requestedByCode[$code] = ($requestedByCode[$code] ?? 0) + $quantity;
+                $lines[] = ['item_code' => $code, 'quantity' => $quantity];
+            }
+
+            $itemsByCode = Item::whereIn('item_code', array_keys($requestedByCode))
+                ->get(['id', 'item_code'])
+                ->keyBy('item_code');
+
+            foreach ($requestedByCode as $code => $quantity) {
+                if (! $itemsByCode->has($code)) {
+                    throw new StockTransferException(
+                        StockTransferException::ITEM_NOT_FOUND,
+                        ['code' => $code]
+                    );
+                }
+            }
+
+            $itemIds = $itemsByCode->pluck('id')->all();
+            $availableStock = $this->availableStockForItems($itemIds, $sourceId);
 
             $transfer = StockTransfer::create([
                 'source_warehouse_id' => $sourceId,
                 'target_warehouse_id' => $targetId,
                 'transfer_date'       => $data['transfer_date'],
                 'transfer_reason'     => $this->sanitizeText($data['transfer_reason']),
-                'approved_by_staff'   => $this->sanitizeText($data['approved_by_staff']),
+                'approved_by_staff'   => $this->sanitizeText($approvedBy),
                 'transfer_status'     => 'pending',
             ]);
 
-            foreach ($data['items'] as $line) {
-                $code = $this->sanitizeCode($line['item_code']);   // rule 1: uppercase
-                $qty  = (int) $line['quantity'];
-                $item = Item::where('item_code', $code)->firstOrFail();
+            foreach ($requestedByCode as $code => $quantity) {
+                $item = $itemsByCode->get($code);
+                $available = (int) ($availableStock[$item->id] ?? 0);
 
-                // rule 2: validate source stock BEFORE moving anything
-                $available = $this->availableStock($item->id, $sourceId);
-
-                if ($available < $qty) {
-                    throw ValidationException::withMessages([
-                        'items' => "Insufficient stock for {$code}: available {$available}, requested {$qty}.",
-                    ]);
+                if ($available < $quantity) {
+                    throw new StockTransferException(
+                        StockTransferException::INSUFFICIENT_STOCK,
+                        ['code' => $code, 'available' => $available, 'requested' => $quantity]
+                    );
                 }
+            }
 
-                // rule 3: one detail row = stock leaves source AND arrives at target.
-                // Stock is derived (received - sent), so both sides change together
-                // the moment this transfer is marked completed, inside this transaction.
+            foreach ($lines as $line) {
+                $item = $itemsByCode->get($line['item_code']);
                 $transfer->details()->create([
                     'item_id'              => $item->id,
-                    'quantity_transferred' => $qty,
+                    'quantity_transferred' => $line['quantity'],
                 ]);
             }
 
@@ -133,29 +164,27 @@ class StockTransferService
 
     /* ------------------------ STOCK CALCULATION ------------------------ */
 
-    /** Stock of one item in one warehouse = completed IN - completed OUT. */
-    private function availableStock(int $itemId, int $warehouseId): int
+    /** Stock per item in one warehouse = completed IN - completed OUT. */
+    private function availableStockForItems(array $itemIds, int $warehouseId): array
     {
-        $quantity = DB::table('transfer_details as d')
+        return DB::table('transfer_details as d')
             ->join('stock_transfers as t', 't.id', '=', 'd.stock_transfer_id')
             ->where('t.transfer_status', 'completed')
-            ->where('d.item_id', $itemId)
+            ->whereIn('d.item_id', $itemIds)
             ->where(function ($query) use ($warehouseId) {
                 $query->where('t.target_warehouse_id', $warehouseId)
                     ->orWhere('t.source_warehouse_id', $warehouseId);
             })
-            ->select(DB::raw(
-                'COALESCE(SUM(CASE
-                    WHEN t.target_warehouse_id = '.(int) $warehouseId.' THEN d.quantity_transferred
-                    ELSE 0
-                END) - SUM(CASE
-                    WHEN t.source_warehouse_id = '.(int) $warehouseId.' THEN d.quantity_transferred
-                    ELSE 0
-                END), 0) as quantity'
-            ))
-            ->value('quantity');
-
-        return (int) $quantity;
+            ->groupBy('d.item_id')
+            ->select('d.item_id')
+            ->selectRaw(
+                'SUM(CASE WHEN t.target_warehouse_id = ? THEN d.quantity_transferred ELSE 0 END)
+                - SUM(CASE WHEN t.source_warehouse_id = ? THEN d.quantity_transferred ELSE 0 END) as quantity',
+                [$warehouseId, $warehouseId]
+            )
+            ->pluck('quantity', 'd.item_id')
+            ->map(fn ($quantity) => (int) $quantity)
+            ->all();
     }
 
     /* -------------------------- SANITIZERS -------------------------- */

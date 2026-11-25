@@ -23,7 +23,7 @@ class StoreItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'item_description'   => ['required', 'string', 'max:255', 'not_regex:/^[a-z]{10,}\d*$/'],
+            'item_description'   => ['required', 'string', 'max:255', 'not_regex:/^(?=(?:[^a-z]*[a-z]){10})[a-z0-9\p{P}\p{S}]+$/iu'],
             'supplier_id'        => ['required', 'integer', 'exists:suppliers,id'],
             // optional opening stock per warehouse
             'stocks'                  => ['sometimes', 'array'],
@@ -35,11 +35,16 @@ class StoreItemRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'item_description.not_regex' => 'Please enter a readable item description instead of a random string.',
+            'item_description.not_regex' => 'Please enter a readable item description.',
             'supplier_id.exists'     => 'The selected supplier does not exist.',
             'stocks.*.warehouse_id.distinct' => 'A warehouse can only appear once in the opening stock.',
             'stocks.*.quantity.min'  => 'Opening stock must be at least 1.',
             'stocks.*.quantity.max'  => 'Opening stock cannot exceed 500 per warehouse.',
         ];
+    }
+
+    public function successMessage(): string
+    {
+        return 'Item created successfully.';
     }
 }

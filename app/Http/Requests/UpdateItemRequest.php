@@ -30,7 +30,7 @@ class UpdateItemRequest extends FormRequest
 
         return [
             'item_code'        => ['sometimes', 'string', 'max:30', Rule::unique('items', 'item_code')->ignore($id)],
-            'item_description' => ['sometimes', 'required', 'string', 'max:255', 'not_regex:/^[a-z]{10,}\d*$/'],
+            'item_description' => ['sometimes', 'required', 'string', 'max:255', 'not_regex:/^(?=(?:[^a-z]*[a-z]){10})[a-z0-9\p{P}\p{S}]+$/iu'],
             'supplier_id'      => ['sometimes', 'integer', 'exists:suppliers,id'],
         ];
     }
@@ -39,8 +39,13 @@ class UpdateItemRequest extends FormRequest
     {
         return [
             'item_code.unique'   => 'Another item already uses this code.',
-            'item_description.not_regex' => 'Please enter a readable item description instead of a random string.',
+            'item_description.not_regex' => 'Please enter a readable item description.',
             'supplier_id.exists' => 'The selected supplier does not exist.',
         ];
+    }
+
+    public function successMessage(): string
+    {
+        return 'Item updated successfully.';
     }
 }

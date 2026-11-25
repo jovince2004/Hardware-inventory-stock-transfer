@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreWarehouseRequest;
 use App\Http\Requests\UpdateWarehouseRequest;
+use App\Http\Requests\DeleteWarehouseRequest;
 use App\Models\Warehouse;
 use App\Services\WarehouseService;
 use Illuminate\Http\RedirectResponse;
@@ -23,7 +24,6 @@ class WarehouseController extends Controller
         ]);
     }
 
-
     public function store(StoreWarehouseRequest $request): RedirectResponse
     {
         $data = $request->validated();
@@ -32,23 +32,23 @@ class WarehouseController extends Controller
 
         $this->warehouseService->create($data);
 
-        return redirect()->route($returnTo)->with('success', 'Warehouse created successfully.');
+        return redirect()->route($returnTo)->with('success', $request->successMessage());
     }
 
     public function update(UpdateWarehouseRequest $request, Warehouse $warehouse): RedirectResponse
     {
         $this->warehouseService->update($warehouse, $request->validated());
 
-        return redirect()->route('warehouses.index')->with('success', 'Warehouse updated successfully.');
+        return redirect()->route('warehouses.index')->with('success', $request->successMessage());
     }
 
-    public function destroy(Warehouse $warehouse): RedirectResponse
+    public function destroy(DeleteWarehouseRequest $request, Warehouse $warehouse): RedirectResponse
     {
         if (! $this->warehouseService->delete($warehouse)) {
             return redirect()->route('warehouses.index')
-                ->with('error', 'This warehouse cannot be deleted because it has stock transfer history.');
+                ->with('error', $request->failureMessage());
         }
 
-        return redirect()->route('warehouses.index')->with('success', 'Warehouse deleted successfully.');
+        return redirect()->route('warehouses.index')->with('success', $request->successMessage());
     }
 }

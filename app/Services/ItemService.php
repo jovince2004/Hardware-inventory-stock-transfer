@@ -203,7 +203,11 @@ class ItemService
             $totals[$row->item_id][$row->warehouse_id] = ($totals[$row->item_id][$row->warehouse_id] ?? 0) - (int) $row->qty;
         }
 
-        $names = Warehouse::pluck('name', 'id');
+        $warehouseIds = collect($totals)
+            ->flatMap(fn (array $byWarehouse) => array_keys($byWarehouse))
+            ->unique()
+            ->all();
+        $names = Warehouse::whereIn('id', $warehouseIds)->pluck('name', 'id');
         $map = [];
         foreach ($totals as $itemId => $byWarehouse) {
             foreach ($byWarehouse as $warehouseId => $qty) {

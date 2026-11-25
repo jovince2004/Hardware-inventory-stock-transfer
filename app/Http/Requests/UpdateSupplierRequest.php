@@ -39,4 +39,9 @@ class UpdateSupplierRequest extends FormRequest
             'name.not_regex' => 'Please enter a readable supplier name instead of a random string.',
         ];
     }
+
+    public function successMessage(): string
+    {
+        return 'Supplier updated successfully.';
+    }
 }
